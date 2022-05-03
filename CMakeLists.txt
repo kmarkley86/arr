@@ -8,8 +8,12 @@ project(kmarkley-arr
   VERSION ${version}
   LANGUAGES CXX
 )
-enable_testing()
-add_custom_target(tests)
+include(CTest)
+if(BUILD_TESTING)
+  if (NOT TARGET tests)
+    add_custom_target(tests)
+  endif()
+endif()
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED YES)
 set(CMAKE_CXX_EXTENSIONS NO)
@@ -70,11 +74,13 @@ endif()
 # Test definition
 #
 function(define_simple_test name main lib)
-  add_executable(${name} EXCLUDE_FROM_ALL ${main})
-  target_link_libraries(${name} PRIVATE ${lib})
-  add_test(NAME ${name} COMMAND ${name})
-  add_dependencies(tests ${name})
-  set_tests_properties(${name} PROPERTIES LABELS ${lib})
+  if(BUILD_TESTING)
+    add_executable(${name} EXCLUDE_FROM_ALL ${main})
+    target_link_libraries(${name} PRIVATE ${lib})
+    add_test(NAME ${name} COMMAND ${name})
+    add_dependencies(tests ${name})
+    set_tests_properties(${name} PROPERTIES LABELS ${lib})
+  endif()
 endfunction()
 
 #
@@ -87,7 +93,7 @@ set_target_properties(arr PROPERTIES
 )
 target_include_directories(arr
   PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
-  PUBLIC /home/kyle/code/opaque_github
+# PUBLIC path-to-opaque
 )
 target_sources(arr
   PUBLIC
@@ -220,3 +226,4 @@ target_link_libraries(fifo_concurrency PRIVATE Threads::Threads)
 target_compile_options(swap_macros PRIVATE -Wno-self-move -Wno-self-assign-overloaded)
 target_compile_options(context_exception PRIVATE -Wno-self-move -Wno-self-assign-overloaded)
 target_compile_options(errno_exception PRIVATE -Wno-self-move)
+target_compile_options(fifo_concurrency PRIVATE -Wno-sign-conversion)

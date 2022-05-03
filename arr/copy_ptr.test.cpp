@@ -36,10 +36,10 @@ UNIT_TEST_MAIN
 
 struct uncloneable {
   int value;
-  ~uncloneable() { } 
-  uncloneable() : value(0) { } 
-  uncloneable(int x) : value(x) { } 
-  uncloneable(const uncloneable&  peer) : value(peer.value) { } 
+  ~uncloneable() { }
+  uncloneable() : value(0) { }
+  uncloneable(int x) : value(x) { }
+  uncloneable(const uncloneable&  peer) : value(peer.value) { }
   uncloneable(      uncloneable&& peer) : value(peer.value) { peer.value = 0; }
   uncloneable& operator=(int x) { value = x; return *this; }
   operator int() { return value; }
@@ -47,10 +47,10 @@ struct uncloneable {
 
 struct cloneable {
   int value;
-  virtual ~cloneable() { } 
-  cloneable() : value(0) { } 
-  cloneable(int x) : value(x) { } 
-  cloneable(const cloneable&  peer) : value(peer.value) { } 
+  virtual ~cloneable() { }
+  cloneable() : value(0) { }
+  cloneable(int x) : value(x) { }
+  cloneable(const cloneable&  peer) : value(peer.value) { }
   cloneable(      cloneable&& peer) : value(peer.value) { peer.value = 0; }
   cloneable& operator=(int x) { value = x; return *this; }
   operator int() { return value; }
@@ -58,7 +58,7 @@ struct cloneable {
 };
 
 struct sub : cloneable {
-  sub(int x = 0) : cloneable(x) { } 
+  sub(int x = 0) : cloneable(x) { }
   DEFINE_CLONE
 };
 

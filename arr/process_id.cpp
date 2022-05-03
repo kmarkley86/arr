@@ -48,32 +48,32 @@ bool process_id::completed() {
   return finished;
 }
 
-bool process_id::exited() const noexcept {
+bool process_result::exited() const noexcept {
   return WIFEXITED(status);
 }
 
-bool process_id::signaled() const noexcept {
+bool process_result::signaled() const noexcept {
   return WIFSIGNALED(status);
 }
 
-bool process_id::coredump() const noexcept {
+bool process_result::coredump() const noexcept {
   return signaled() and WCOREDUMP(status);
 }
 
-process_id::status_t process_id::exit_status() const noexcept {
+process_result::status_t process_result::exit_status() const noexcept {
   return WEXITSTATUS(status);
 }
 
-process_id::status_t process_id::term_signal() const noexcept {
+process_result::status_t process_result::term_signal() const noexcept {
   return WTERMSIG(status);
 }
 
-bool process_id::successful() const noexcept {
+bool process_result::successful() const noexcept {
   return exited() and EXIT_SUCCESS == exit_status();
 }
 
 // TODO I18N
-std::string process_id::result() const {
+std::string process_result::result() const {
   std::ostringstream s;
   if (false) {
   } else if (exited()) {
@@ -82,7 +82,7 @@ std::string process_id::result() const {
     s << "terminated by signal " << term_signal();
     if (coredump()) {
       s << ", core dumped";
-    }   
+    }
   } else {
     throw std::runtime_error("process neither exited nor signaled");
   }

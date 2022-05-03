@@ -81,20 +81,13 @@ struct fifo : private buffer_base<T,A> {
   /// from the fifo, or if it is modified to point outside the range of
   /// valid elements in the fifo.
   ///
-  template <bool is_const> struct _iterator
-    : std::iterator<
-        std::random_access_iterator_tag,
-        typename std::conditional<is_const, const T , T >::type,
-        typename std::make_signed<size_type>::type,
-        typename std::conditional<is_const, const T*, T*>::type,
-        typename std::conditional<is_const, const T&, T&>::type>
-  {
-    using iterator_category = typename _iterator::iterator_category;
-    using value_type        = typename _iterator::value_type;
-    using difference_type   = typename _iterator::difference_type;
-    using pointer           = typename _iterator::pointer;
-    using reference         = typename _iterator::reference;
-    using fifo_t = typename std::conditional<is_const, const fifo, fifo>::type;
+  template <bool is_const> struct _iterator {
+    using iterator_category = std::random_access_iterator_tag;
+    using value_type        = std::conditional_t<is_const, const T , T >;
+    using difference_type   = std::make_signed_t<size_type>;
+    using pointer           = std::conditional_t<is_const, const T*, T*>;
+    using reference         = std::conditional_t<is_const, const T&, T&>;
+    using fifo_t = typename std::conditional_t<is_const, const fifo, fifo>;
 
     _iterator(pointer p, pointer f, pointer l, bool c) noexcept
       : position(p)

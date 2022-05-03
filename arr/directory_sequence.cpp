@@ -39,7 +39,7 @@ namespace {
 
 namespace arr {
 
-directory_iterator::directory_iterator(directory_sequence * ds) 
+directory_iterator::directory_iterator(directory_sequence * ds)
   : dir( ds ? wrap::opendir(SOURCE_CONTEXT, ds->path().c_str()) : nullptr )
   , container(ds)
 {
@@ -51,13 +51,13 @@ directory_iterator& directory_iterator::operator++() {
     try {
       do {
         entry = wrap::readdir(SOURCE_CONTEXT, dir.get());
-      } while (entry and DT_DIR == entry->d_type and 
+      } while (entry and DT_DIR == entry->d_type and
           (current_dir == entry->d_name or
             parent_dir == entry->d_name));
     } catch (syscall_exception& e) {
       entry = nullptr;
       container->exceptions.emplace_back(e.clone());
-    }   
+    }
   }
   return *this;
 }

@@ -46,8 +46,12 @@ struct directory_sequence;
 ///
 /// Iterator for the sequence of files in a directory
 ///
-struct directory_iterator
-  : std::iterator<std::input_iterator_tag, const struct dirent> {
+struct directory_iterator {
+  using iterator_category = std::input_iterator_tag;
+  using value_type        = const struct dirent;
+  using pointer           = const struct dirent*;
+  using reference         = const struct dirent&;
+
   directory_iterator() noexcept { }
   directory_iterator(directory_sequence * ds);
   friend bool operator==(

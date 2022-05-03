@@ -34,13 +34,28 @@
 #include <sys/types.h>
 
 namespace wrap {
+///
+/// \ingroup system_resources
+/// A process result
+///
+struct process_result {
+  using status_t = int;
+  status_t status = -1;
+
+  bool exited()    const noexcept;       ///< Process exited normally
+  bool signaled()  const noexcept;       ///< Process terminated by signal
+  bool coredump()  const noexcept;       ///< Process created core dump
+  status_t exit_status() const noexcept; ///< Exit status of the process
+  status_t term_signal() const noexcept; ///< Signal terminating the process
+  bool successful() const noexcept;      ///< Process exited successfully
+  std::string result() const;            ///< Description of process exit
+};
 
 ///
 /// \ingroup system_resources
 /// A process id
 ///
-struct process_id {
-  using status_t = int;
+struct process_id : process_result {
   enum class pid_et : pid_t { invalid = 0 };
   ~process_id() noexcept;       ///< Wait for the process to complete
   process_id() noexcept { }
@@ -52,25 +67,18 @@ struct process_id {
   bool valid() const noexcept { return pid != pid_et::invalid; }
   pid_t get()  const noexcept { return static_cast<pid_t>(pid); }
   pid_t release() noexcept { auto r = get(); pid = pid_et::invalid; return r; }
-  void wait();          ///< Wait for the process to complete
-  bool completed();     ///< Check whether the process has completed
-  bool exited()    const noexcept;      ///< Process exited normally
-  bool signaled()  const noexcept;      ///< Process terminated by signal
-  bool coredump()  const noexcept;      ///< Process created core dump
-  status_t exit_status() const noexcept; ///< Exit status of the process
-  status_t term_signal() const noexcept; ///< Signal terminating the process
-  bool successful() const noexcept;     ///< Process exited successfully
-  std::string result() const;           ///< Description of process exit
+  void wait();      ///< Wait for the process to complete
+  bool completed(); ///< Check whether the process has completed
+
 private:
   pid_et pid = pid_et::invalid;
   bool finished = false;
-  status_t status = -1;
 };
 
 inline process_id::process_id(process_id&& peer) noexcept
-  : pid(peer.pid)
+  : process_result(peer)
+  , pid(peer.pid)
   , finished(peer.finished)
-  , status(peer.status)
 {
   peer.pid = pid_et::invalid;
 }
@@ -79,9 +87,9 @@ inline process_id&
 process_id::operator=(process_id&& peer) noexcept {
   auto& self = *this;
   using std::swap;
+  swap(static_cast<process_result&>(*this), static_cast<process_result&>(peer));
   swap(self.pid, peer.pid);
-  self.finished = peer.finished;
-  self.status   = peer.status;
+  swap(self.finished, peer.finished);
   return self;
 }
 

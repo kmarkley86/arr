@@ -50,7 +50,7 @@ execute_capture::execute_capture(
 }
 
 execute_log_fd::execute_log_fd(
-    const char * const argv[], 
+    const char * const argv[],
     wrap::file_descriptor::fd_t descriptor,
     bool log_stderr)
   : wrap::process_id(arr::spawn_stdio(argv, ::environ,
@@ -61,7 +61,7 @@ execute_log_fd::execute_log_fd(
 }
 
 execute_log_file::execute_log_file(
-    const char * const argv[], 
+    const char * const argv[],
     const char * path, int flags, mode_t mode,
     bool log_stderr)
   : arr::fd_channel(wrap::open(SOURCE_CONTEXT, path, flags, mode))

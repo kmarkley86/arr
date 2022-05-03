@@ -43,8 +43,12 @@ struct recursive_directory_sequence;
 ///
 /// Iterator for the sequence of files in a directory tree
 ///
-struct recursive_directory_iterator
-  : std::iterator<std::input_iterator_tag, const struct dirent> {
+struct recursive_directory_iterator {
+  using iterator_category = std::input_iterator_tag;
+  using value_type        = const struct dirent;
+  using pointer           = const struct dirent*;
+  using reference         = const struct dirent&;
+
   recursive_directory_iterator() noexcept { }
   recursive_directory_iterator(recursive_directory_sequence * rds);
   friend bool operator==(
