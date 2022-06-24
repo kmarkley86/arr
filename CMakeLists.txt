@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 3.15)
+include_guard(GLOBAL)
 set(ver_major 2)
 set(ver_minor 0)
 set(ver_patch 0)
