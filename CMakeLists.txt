@@ -37,7 +37,7 @@ else()
     set(CMAKE_BUILD_TYPE normal CACHE STRING "" FORCE)
   else()
     string(TOLOWER ${CMAKE_BUILD_TYPE} build_type)
-    if(NOT CMAKE_BUILD_TYPE IN_LIST build_types)
+    if(NOT build_type IN_LIST build_types)
       message("Build type should be one of: ${build_types}")
       message(FATAL_ERROR "Unknown build type: ${CMAKE_BUILD_TYPE}")
     endif()
@@ -64,6 +64,9 @@ if     (${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang" OR
   )
 endif()
 if     (${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
+  if(ENABLE_SA)
+    set(CMAKE_CXX_CLANG_TIDY "clang-tidy")
+  endif()
 elseif (${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
   add_compile_options(
     -Warith-conversion -Wlogical-op
