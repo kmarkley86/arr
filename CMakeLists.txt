@@ -35,9 +35,12 @@ else()
   )
   if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE normal CACHE STRING "" FORCE)
-  elseif(NOT CMAKE_BUILD_TYPE IN_LIST build_types)
-    message("Build type should be one of: ${build_types}")
-    message(FATAL_ERROR "Unknown build type: ${CMAKE_BUILD_TYPE}")
+  else()
+    string(TOLOWER ${CMAKE_BUILD_TYPE} build_type)
+    if(NOT CMAKE_BUILD_TYPE IN_LIST build_types)
+      message("Build type should be one of: ${build_types}")
+      message(FATAL_ERROR "Unknown build type: ${CMAKE_BUILD_TYPE}")
+    endif()
   endif()
 endif()
 message(STATUS "Build type is: ${CMAKE_BUILD_TYPE}")
@@ -87,13 +90,13 @@ endfunction()
 # arr
 #
 add_library(arr)
-set_target_properties(arr PROPERTIES
-  VERSION ${version}
-  SOVERSION ${ver_major}
-)
+#set_target_properties(arr PROPERTIES
+#  VERSION ${version}
+#  SOVERSION ${ver_major}
+#)
 target_include_directories(arr
   PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
-# PUBLIC path-to-opaque
+  PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../opaque
 )
 target_sources(arr
   PUBLIC
