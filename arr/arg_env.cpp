@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2012, 2021
+// Copyright (c) 2012, 2021, 2022
 // Kyle Markley.  All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -53,6 +53,19 @@ arguments::operator const char * const *() const {
   }
   compatible[num_elements] = nullptr;
   return compatible.get();
+}
+
+arguments& arguments::operator=(arguments peer) {
+  using std::swap;
+  swap(*this, peer);
+  return *this;
+}
+
+void swap(arguments& x, arguments& y) noexcept {
+  using base = std::list<std::string>;
+  using std::swap;
+  swap(static_cast<base&>(x), static_cast<base&>(y));
+  swap(x.compatible, y.compatible);
 }
 
 

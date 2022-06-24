@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2012, 2013, 2021
+// Copyright (c) 2012, 2013, 2021, 2022
 // Kyle Markley.  All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -85,6 +85,18 @@ SUITE(try_arguments) {
     CHECK_STRINGS("arg1"   , p[1]);
     CHECK_STRINGS("arg2"   , p[2]);
     CHECK_EQUAL(voidify(nullptr), voidify(p[3]));
+  }
+
+  TEST(swap) {
+    const char * const X[] = { "a", "b", nullptr };
+    const char * const Y[] = { "c", "d", nullptr };
+    arguments x(X);
+    arguments y(Y);
+    swap(x, y);
+    const char * const * from_x = x;
+    const char * const * from_y = y;
+    CHECK_STRINGS("c", from_x[0]);
+    CHECK_STRINGS("a", from_y[0]);
   }
 
 }

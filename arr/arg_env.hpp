@@ -52,8 +52,10 @@ namespace arr {
 struct arguments : std::list<std::string> {
   arguments(const char * const argv[] = nullptr);
   arguments(const arguments& peer) : std::list<std::string>(peer) { }
+  arguments& operator=(arguments peer);
   operator const char * const *() const;
   mutable std::unique_ptr<const char *[]> compatible;
+  friend void swap(arguments&, arguments&) noexcept;
 };
 
 ///
