@@ -105,6 +105,9 @@ target_include_directories(arr
 target_sources(arr
   PUBLIC
 
+# meta
+arr/type_pack.hpp
+
 # buffers
 arr/acq_rel_accumulator.hpp
 arr/recent_accumulator.hpp
@@ -191,6 +194,7 @@ arr/tracing_base.test.hpp
 arr/report.test.hpp
 )
 set(arr_tests
+arr/type_pack.test.cpp
 arr/acq_rel_accumulator.test.cpp
 arr/recent_accumulator.test.cpp
 arr/buffer_base.test.cpp
