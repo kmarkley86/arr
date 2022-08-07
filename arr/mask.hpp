@@ -1,7 +1,7 @@
 #ifndef ARR_MASK_HPP
 #define ARR_MASK_HPP
 //
-// Copyright (c) 2013, 2021
+// Copyright (c) 2013, 2021, 2022
 // Kyle Markley.  All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -29,6 +29,7 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //
 
+#include <algorithm>
 #include <limits>
 #include <stdexcept>
 
@@ -37,68 +38,170 @@ namespace arr {
 /// \addtogroup miscellaneous
 /// @{
 
+template <typename T>
+constexpr auto full_width() {
+  return
+    std::numeric_limits<T>::digits +
+    std::numeric_limits<T>::is_signed;
+}
+
+template <typename T>
+constexpr bool less_than_full_width(unsigned num_bits) {
+  return num_bits < full_width<T>();
+}
+
+template <typename T>
+constexpr bool greater_than_full_width(unsigned num_bits) {
+  return full_width<T>() < num_bits;
+}
+
+template <typename T>
+constexpr bool equals_full_width(unsigned num_bits) {
+  return full_width<T>() == num_bits;
+}
+
+///
+/// All-zeros value
+///
+/// @return A value of type \c T with all bits set to \c '0'
+///
+template <typename T>
+constexpr T all_zeros() {
+  return T(0u);
+}
+
 ///
 /// All-ones value
 ///
 /// @return A value of type \c T with all bits set to \c '1'
 ///
-template <typename T> inline constexpr
-T all_ones() {
-  return static_cast<T>(~T(0));
+template <typename T>
+constexpr T all_ones() {
+  return static_cast<T>(~all_zeros<T>());
 }
 
 ///
-/// Bit mask in lowest position (partial values only)
+/// Bit mask of zeros in lowest position (partial values only)
 ///
-/// @param num_bits Number of \c '1' bits; must be fewer than the width of \c T
-/// @return A value of type \c T with the lowest \c num_bits bits set to \c '1'
+/// @param num_zeros Number of \c '0' bits; must be fewer than the width of \c T
+/// @return A \c T with the lowest \c num_zeros set to \c '0', rest \c '1'
 ///
-/// §iso.5.8/1 "The behavior is undefined if the right operand [of a shift
-/// operator] is negative, or greater than or equal to the length in bits of
-/// the promoted left operand."
-///
-/// The behavior is undefined for signed types (§iso.5.8/2), although an
-/// implementation is likely to do what we want.
-///
-template <typename T> inline constexpr
-T partial_low_mask(unsigned num_bits) {
-  return static_cast<T>(~(all_ones<T>() << num_bits));
+template <typename T>
+constexpr T partial_low_zeros(unsigned num_zeros) {
+  return static_cast<T>(all_ones<T>() << num_zeros);
 }
 
 ///
-/// Bit mask in lowest position
+/// Bit mask of ones in lowest position (partial values only)
 ///
-/// @param num_bits Number of \c '1' bits
-/// @return A value of type \c T with the lowest \c num_bits bits set to \c '1'
+/// @param num_ones Number of \c '1' bits; must be fewer than the width of \c T
+/// @return A \c T with the lowest \c num_ones set to \c '1', rest \c '0'
 ///
-/// If \c num_bits is greater than the number of bits in type \c T,
-/// the return value will have all bits set.
-///
-template <typename T> inline constexpr
-T low_mask(unsigned num_bits) {
-  return num_bits >=
-      std::numeric_limits<T>::digits + std::numeric_limits<T>::is_signed
-    ? all_ones<T>()
-    : partial_low_mask<T>(num_bits);
+template <typename T>
+constexpr T partial_low_ones(unsigned num_ones) {
+  return static_cast<T>(~partial_low_zeros<T>(num_ones));
 }
 
 ///
-/// Bit mask in lowest position (checks argument validity)
+/// Bit mask of zeros in lowest position
 ///
-/// @param num_bits Number of \c '1' bits
-/// @return A value of type \c T with the lowest \c num_bits bits set to \c '1'
+/// @param num_zeros Number of \c '0' bits
+/// @return A \c T with the lowest \c num_zeros bits set to \c '0', rest \c '1'
 ///
-/// If \c num_bits is greater than the number of bits in type \c T,
-/// an std::invalid_argument exception will be thrown.
+/// If \c num_zeros is greater than the number of bits in type \c T,
+/// the return value will have all bits zero.
 ///
-template <typename T> inline constexpr
-T low_mask_checked(unsigned num_bits) {
-  return
-      num_bits >
-      std::numeric_limits<T>::digits + std::numeric_limits<T>::is_signed
-    ? throw std::invalid_argument("Data type is not wide enough")
-    : low_mask<T>(num_bits);
+template <typename T>
+constexpr T low_zeros(unsigned num_zeros) {
+  if (less_than_full_width<T>(num_zeros)) {
+    return partial_low_zeros<T>(num_zeros);
+  } else {
+    return all_zeros<T>();
+  }
 }
+
+///
+/// Bit mask of ones in lowest position
+///
+/// @param num_ones Number of \c '1' bits
+/// @return A \c T with the lowest \c num_ones bits set to \c '1', rest \c '0'
+///
+/// If \c num_ones is greater than the number of bits in type \c T,
+/// the return value will have all bits one.
+///
+template <typename T>
+constexpr T low_ones(unsigned num_ones) {
+  return static_cast<T>(~low_zeros<T>(num_ones));
+}
+
+///
+/// Bit mask of zeros in lowest position (checks argument validity)
+///
+/// @param num_zeros Number of \c '0' bits
+/// @return A \c T with the lowest \c num_zeros bits set to \c '0', rest \c '1'
+///
+/// If \c num_zeros is greater than the number of bits in type \c T,
+/// throw std::invalid_argument.
+///
+template <typename T>
+constexpr T checked_low_zeros(unsigned num_zeros) {
+  if (greater_than_full_width<T>(num_zeros)) {
+    throw std::invalid_argument("Exceeds data type width");
+  } else {
+    return low_zeros<T>(num_zeros);
+  }
+}
+
+///
+/// Bit mask of ones in lowest position (checks argument validity)
+///
+/// @param num_ones Number of \c '1' bits
+/// @return A \c T with the lowest \c num_ones bits set to \c '1', rest \c '0'
+///
+/// If \c num_ones is greater than the number of bits in type \c T,
+/// throw std::invalid_argument.
+///
+template <typename T>
+constexpr T checked_low_ones(unsigned num_ones) {
+  return static_cast<T>(~checked_low_zeros<T>(num_ones));
+}
+
+///
+/// Bit mask of ones
+///
+/// @param width Number of \c '1' bits
+/// @param position Bit position of lowest \c '1' bit
+/// @return A \c T with \c width \c '1' bits starting at bit \c position
+///
+/// If the mask is out-of-range for type \c T, it will be truncated.
+///
+template <typename T>
+constexpr T mask_width_position(unsigned width, unsigned position) {
+  if (less_than_full_width<T>(position)) {
+    return static_cast<T>(low_ones<T>(width) << position);
+  } else {
+    return all_zeros<T>();
+  }
+}
+
+///
+/// Bit mask of ones (checks argument validity)
+///
+/// @param width Number of \c '1' bits
+/// @param position Bit position of lowest \c '1' bit
+/// @return A \c T with \c width \c '1' bits starting at bit \c position
+///
+/// If the mask is out-of-range for type \c T, throw std::invalid_argument.
+///
+template <typename T>
+constexpr T checked_mask_width_position(unsigned width, unsigned position) {
+  if (greater_than_full_width<T>(width+position)) {
+    throw std::invalid_argument("Exceeds data type width");
+  } else {
+    return mask_width_position<T>(width, position);
+  }
+}
+
 
 ///
 /// Bit mask (ordered arguments)
@@ -108,31 +211,26 @@ T low_mask_checked(unsigned num_bits) {
 /// @return A value of type \c T with bits [high_bit:low_bit] set to \c '1'
 ///
 /// No argument checks are performed.  The result is undefined if high_bit
-/// is less than low_bit or if neither exists in type \c T.  If high_bit
-/// does not exist in type \c T, it will be treated as the uppermost bit.
+/// is less than low_bit.  If high_bit does not exist in type \c T, the mask
+/// will be truncated.
 ///
-template <typename T> inline constexpr
-T mask(unsigned high_bit, unsigned low_bit) {
-  return static_cast<T>(
-      low_mask<T>(high_bit+1) ^ partial_low_mask<T>(low_bit));
+template <typename T>
+constexpr T mask_ordered_pair(unsigned high_bit, unsigned low_bit) {
+  return mask_width_position<T>(high_bit-low_bit+1u, low_bit);
 }
 
 ///
-/// Bit mask (ordered arguments, checked)
+/// Bit mask (ordered arguments, checks argument validity)
 ///
 /// @param high_bit Highest bit postion to make a \c '1'
 /// @param  low_bit Lowest bit postion to make a \c '1'
 /// @return A value of type \c T with bits [high_bit:low_bit] set to \c '1'
 ///
-/// The result is undefined if high_bit is less than low_bit.
+/// If the mask is out-of-range for type \c T, throw std::invalid_argument.
 ///
-/// An std::invalid_argument exception will be thrown if high_bit
-/// does not exist in type \c T.
-///
-template <typename T> inline constexpr
-T mask_checked(unsigned high_bit, unsigned low_bit) {
-  return static_cast<T>(
-      low_mask_checked<T>(high_bit+1) ^ partial_low_mask<T>(low_bit));
+template <typename T>
+constexpr T checked_mask_ordered_pair(unsigned high_bit, unsigned low_bit) {
+  return checked_mask_width_position<T>(high_bit-low_bit+1u, low_bit);
 }
 
 ///
@@ -142,28 +240,29 @@ T mask_checked(unsigned high_bit, unsigned low_bit) {
 /// @param y High or low bit position to make a \c '1'
 /// @return A value of type \c T with bits [x:y] set to \c '1'
 ///
-/// No argument checks are performed.  The result is undefined if neither
-/// argument bit exists in type \c T.  If the larger argument bit does not
-/// exist in type \c T, it will be treated as the uppermost bit.
+/// No argument checks are performed.  The result is undefined if high_bit
+/// is less than low_bit.  If high_bit does not exist in type \c T, the mask
+/// will be truncated.
 ///
-template <typename T> inline constexpr
-T mask_unordered(unsigned x, unsigned y) {
-  return x < y ? mask<T>(y, x) : mask<T>(x, y);
+template <typename T>
+constexpr T mask_unordered_pair(unsigned x, unsigned y) {
+  auto [lo, hi] = std::minmax(x, y);
+  return mask_ordered_pair<T>(hi, lo);
 }
 
 ///
-/// Bit mask (unordered arguments, checked)
+/// Bit mask (unordered arguments, checks argument validity)
 ///
 /// @param x High or low bit position to make a \c '1'
 /// @param y High or low bit position to make a \c '1'
 /// @return A value of type \c T with bits [x:y] set to \c '1'
 ///
-/// An std::invalid_argument exception will be thrown if either bit position
-/// does not exist in type \c T.  The arguments may be given in any order.
+/// If the mask is out-of-range for type \c T, throw std::invalid_argument.
 ///
-template <typename T> inline constexpr
-T mask_unordered_checked(unsigned x, unsigned y) {
-  return x < y ? mask_checked<T>(y, x) : mask_checked<T>(x, y);
+template <typename T>
+constexpr T checked_mask_unordered_pair(unsigned x, unsigned y) {
+  auto [lo, hi] = std::minmax(x, y);
+  return checked_mask_ordered_pair<T>(hi, lo);
 }
 
 /// @}
