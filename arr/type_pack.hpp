@@ -161,18 +161,14 @@ constexpr std::size_t index_of(type_pack<Types...> p)
 //
 
 template <typename... Ts, typename... Us>
-constexpr void
-operator+(type_pack<Ts...>, type_pack<Us...>) = delete; // not commutative
-
-template <typename... Ts, typename... Us>
 constexpr type_pack<Ts..., Us...>
-operator*(type_pack<Ts...>, type_pack<Us...>) { // concatenation
+operator||(type_pack<Ts...>, type_pack<Us...>) { // concatenation
   return {};
 }
 
 template <typename... Packs>
 constexpr auto concatenate(Packs... type_packs) {
-  return (... * type_packs);
+  return (... || type_packs);
 }
 
 template <template <typename> typename T, typename... Ts>

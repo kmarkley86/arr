@@ -105,10 +105,10 @@ TEST(index_of) {
 //
 
 TEST(concatenation) {
-  static_assert(pack<>{}          == pack<>{}     * pack<>{}    );
-  static_assert(pack<void>{}      == pack<void>{} * pack<>{}    );
-  static_assert(pack<void>{}      == pack<>{}     * pack<void>{});
-  static_assert(pack<int, char>{} == pack<int>{}  * pack<char>{});
+  static_assert(pack<>{}          == (pack<>{}     || pack<>{}    ));
+  static_assert(pack<void>{}      == (pack<void>{} || pack<>{}    ));
+  static_assert(pack<void>{}      == (pack<>{}     || pack<void>{}));
+  static_assert(pack<int, char>{} == (pack<int>{}  || pack<char>{}));
 }
 
 TEST(concatenate) {
