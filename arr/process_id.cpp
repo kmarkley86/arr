@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2012, 2021
+// Copyright (c) 2012, 2021, 2022
 // Kyle Markley.  All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -29,6 +29,7 @@
 
 #include "arr/process_id.hpp"
 #include "arr/wait.hpp"
+#include "arr/syscall_exception.hpp"
 #include <cstdlib>
 #include <stdexcept>
 #include <sstream>
@@ -36,8 +37,12 @@
 namespace wrap {
 
 void process_id::wait() {
-  if (not finished) {
-    finished = wrap::waitpid(SOURCE_CONTEXT, get(), &status, 0);
+  while (not finished) {
+    try {
+      finished = wrap::waitpid(SOURCE_CONTEXT, get(), &status, 0);
+    } catch (arr::syscall_exception& e) {
+      if (e.code() != std::errc::interrupted) throw;
+    }
   }
 }
 
