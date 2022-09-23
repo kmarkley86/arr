@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2012, 2013, 2021
+// Copyright (c) 2012, 2013, 2021, 2022
 // Kyle Markley.  All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -70,16 +70,16 @@ void recursive_directory_iterator::filter() {
     case recursive_directory_sequence::visit_type::all:
       break;
     case recursive_directory_sequence::visit_type::directory:
-      while (entry and DT_DIR != entry->d_type) operator++();
+      while (entry and DT_DIR != entry->d_type) advance();
       break;
     case recursive_directory_sequence::visit_type::file:
-      while (entry and DT_REG != entry->d_type) operator++();
+      while (entry and DT_REG != entry->d_type) advance();
       break;
     case recursive_directory_sequence::visit_type::link:
-      while (entry and DT_LNK != entry->d_type) operator++();
+      while (entry and DT_LNK != entry->d_type) advance();
       break;
     case recursive_directory_sequence::visit_type::non_dir:
-      while (entry and DT_DIR == entry->d_type) operator++();
+      while (entry and DT_DIR == entry->d_type) advance();
       break;
   }
 }
@@ -115,6 +115,12 @@ void recursive_directory_iterator::update_entry() {
 }
 
 recursive_directory_iterator& recursive_directory_iterator::operator++() {
+  advance();
+  filter();
+  return *this;
+}
+
+void recursive_directory_iterator::advance() {
   //
   // If there is an abandon_request, we will abandon the current directory
   // unless the current entry is a directory and we are dir_order::pre.  In
@@ -155,9 +161,7 @@ recursive_directory_iterator& recursive_directory_iterator::operator++() {
     container->abandon_request = false;
     ascend_while_complete();
     update_entry();
-    filter();
   }
-  return *this;
 }
 
 recursive_directory_iterator recursive_directory_sequence::begin() {

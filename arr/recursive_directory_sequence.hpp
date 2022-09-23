@@ -1,7 +1,7 @@
 #ifndef ARR_RECURSIVE_DIRECTORY_SEQUENCE_HPP
 #define ARR_RECURSIVE_DIRECTORY_SEQUENCE_HPP
 //
-// Copyright (c) 2012, 2014, 2021
+// Copyright (c) 2012, 2014, 2021, 2022
 // Kyle Markley.  All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -67,6 +67,7 @@ struct recursive_directory_iterator {
 private:
   recursive_directory_sequence * container = nullptr;
   pointer entry = nullptr;
+  void advance();
   void filter();
   void descend();
   void descend_while_directory();
