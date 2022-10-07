@@ -81,46 +81,6 @@ constexpr T all_ones() {
 }
 
 ///
-/// Bit mask of zeros in lowest position (partial values only)
-///
-/// @param num_zeros Number of \c '0' bits; must be fewer than the width of \c T
-/// @return A \c T with the lowest \c num_zeros set to \c '0', rest \c '1'
-///
-template <typename T>
-constexpr T partial_low_zeros(unsigned num_zeros) {
-  return static_cast<T>(all_ones<T>() << num_zeros);
-}
-
-///
-/// Bit mask of ones in lowest position (partial values only)
-///
-/// @param num_ones Number of \c '1' bits; must be fewer than the width of \c T
-/// @return A \c T with the lowest \c num_ones set to \c '1', rest \c '0'
-///
-template <typename T>
-constexpr T partial_low_ones(unsigned num_ones) {
-  return static_cast<T>(~partial_low_zeros<T>(num_ones));
-}
-
-///
-/// Bit mask of zeros in lowest position
-///
-/// @param num_zeros Number of \c '0' bits
-/// @return A \c T with the lowest \c num_zeros bits set to \c '0', rest \c '1'
-///
-/// If \c num_zeros is greater than the number of bits in type \c T,
-/// the return value will have all bits zero.
-///
-template <typename T>
-constexpr T low_zeros(unsigned num_zeros) {
-  if (less_than_full_width<T>(num_zeros)) {
-    return partial_low_zeros<T>(num_zeros);
-  } else {
-    return all_zeros<T>();
-  }
-}
-
-///
 /// Bit mask of ones in lowest position
 ///
 /// @param num_ones Number of \c '1' bits
@@ -131,39 +91,26 @@ constexpr T low_zeros(unsigned num_zeros) {
 ///
 template <typename T>
 constexpr T low_ones(unsigned num_ones) {
-  return static_cast<T>(~low_zeros<T>(num_ones));
-}
-
-///
-/// Bit mask of zeros in lowest position (checks argument validity)
-///
-/// @param num_zeros Number of \c '0' bits
-/// @return A \c T with the lowest \c num_zeros bits set to \c '0', rest \c '1'
-///
-/// If \c num_zeros is greater than the number of bits in type \c T,
-/// throw std::invalid_argument.
-///
-template <typename T>
-constexpr T checked_low_zeros(unsigned num_zeros) {
-  if (greater_than_full_width<T>(num_zeros)) {
-    throw std::invalid_argument("Exceeds data type width");
+  if constexpr (std::numeric_limits<T>::is_signed) {
+    if (less_than_full_width<T>(num_ones)) {
+      auto result = all_ones<T>();
+      result <<= num_ones;
+      return static_cast<T>(~std::move(result));
+    } else {
+      return all_ones<T>();
+    }
   } else {
-    return low_zeros<T>(num_zeros);
+    auto num_zeros = full_width<T>() - num_ones;
+    if (equals_full_width<T>(num_zeros)) {
+      return all_zeros<T>();
+    } else if (less_than_full_width<T>(num_zeros)) {
+      auto result = all_ones<T>();
+      result >>= num_zeros;
+      return result;
+    } else {
+      return all_ones<T>();
+    }
   }
-}
-
-///
-/// Bit mask of ones in lowest position (checks argument validity)
-///
-/// @param num_ones Number of \c '1' bits
-/// @return A \c T with the lowest \c num_ones bits set to \c '1', rest \c '0'
-///
-/// If \c num_ones is greater than the number of bits in type \c T,
-/// throw std::invalid_argument.
-///
-template <typename T>
-constexpr T checked_low_ones(unsigned num_ones) {
-  return static_cast<T>(~checked_low_zeros<T>(num_ones));
 }
 
 ///
@@ -177,10 +124,12 @@ constexpr T checked_low_ones(unsigned num_ones) {
 ///
 template <typename T>
 constexpr T mask_width_position(unsigned width, unsigned position) {
-  if (less_than_full_width<T>(position)) {
-    return static_cast<T>(low_ones<T>(width) << position);
-  } else {
+  if (position >= full_width<T>()) {
     return all_zeros<T>();
+  } else {
+    auto result = low_ones<T>(width);
+    result <<= position;
+    return result;
   }
 }
 
@@ -201,7 +150,6 @@ constexpr T checked_mask_width_position(unsigned width, unsigned position) {
     return mask_width_position<T>(width, position);
   }
 }
-
 
 ///
 /// Bit mask (ordered arguments)
