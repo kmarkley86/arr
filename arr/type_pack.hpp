@@ -141,7 +141,7 @@ constexpr auto type_at(type_pack<Types...>)
 }
 // usage is usually: decltype(type_at<N>(type_pack_instance))
 
-template <typename T, typename... Types, size_t... Indices>
+template <typename T, typename... Types, std::size_t... Indices>
 constexpr std::size_t index_of(
     type_pack<Types...>, std::index_sequence<Indices...>) {
   return (std::size_t(0) + ... + (Indices * std::is_same_v<T, Types>));
@@ -201,7 +201,7 @@ constexpr auto filter_by_type(Pred pred, type_pack<Types...>) {
 }
 
 template <template <std::size_t> typename Pred,
-         typename... Types, size_t... Indices>
+         typename... Types, std::size_t... Indices>
 constexpr auto filter_by_index(
     type_pack<Types...>, std::index_sequence<Indices...>) {
   return concatenate(conditional_pack<Pred<Indices>{}(), Types>{}...);
@@ -212,7 +212,7 @@ constexpr auto filter_by_index(type_pack<Types...> p) {
   return filter_by_index<Pred>(p, indices(p));
 }
 
-template <typename Pred, typename... Types, size_t... Indices>
+template <typename Pred, typename... Types, std::size_t... Indices>
 constexpr auto filter_by_index(
     Pred pred, type_pack<Types...>, std::index_sequence<Indices...>) {
   return concatenate(conditional_pack<pred.operator()(Indices), Types>{}...);
@@ -224,7 +224,7 @@ constexpr auto filter_by_index(Pred pred, type_pack<Types...> p) {
 }
 
 template <template <typename, std::size_t> typename Pred,
-         typename... Types, size_t... Indices>
+         typename... Types, std::size_t... Indices>
 constexpr auto filter_by_type_and_index(
     type_pack<Types...>, std::index_sequence<Indices...>) {
   return concatenate(conditional_pack<Pred<Types, Indices>{}(), Types>{}...);
@@ -235,7 +235,7 @@ constexpr auto filter_by_type_and_index(type_pack<Types...> p) {
   return filter_by_type_and_index<Pred>(p, indices(p));
 }
 
-template <typename Pred, typename... Types, size_t... Indices>
+template <typename Pred, typename... Types, std::size_t... Indices>
 constexpr auto filter_by_type_and_index(
     Pred pred, type_pack<Types...>, std::index_sequence<Indices...>) {
   return concatenate(conditional_pack<
