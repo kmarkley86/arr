@@ -109,7 +109,6 @@ target_sources(arr
 arr/type_pack.hpp
 
 # buffers
-arr/acq_rel_accumulator.hpp
 arr/recent_accumulator.hpp
 arr/buffer_base.hpp
 arr/buffer_direction.hpp
@@ -195,7 +194,6 @@ arr/report.test.hpp
 )
 set(arr_tests
 arr/type_pack.test.cpp
-arr/acq_rel_accumulator.test.cpp
 arr/recent_accumulator.test.cpp
 arr/buffer_base.test.cpp
 arr/buffer_direction.test.cpp

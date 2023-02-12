@@ -1,7 +1,7 @@
 #ifndef ARR_RECENT_ACCUMULATOR_HPP
 #define ARR_RECENT_ACCUMULATOR_HPP
 //
-// Copyright (c) 2013, 2021
+// Copyright (c) 2013, 2021, 2023
 // Kyle Markley.  All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -29,37 +29,41 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //
 
-#include "arr/acq_rel_accumulator.hpp"
+#include <atomic>
 
 namespace arr {
 
 ///
 /// \ingroup buffers
-/// Accumulator with a short-term memory
+/// Atomic accumulator with a short-term memory
 ///
 template <typename T>
 struct recent_accumulator {
   using size_type = T;
+  using enum std::memory_order;
 
-  constexpr recent_accumulator() noexcept : _recent(0), _total() { }
+  constexpr recent_accumulator() noexcept : _recent(0u), _total(0u) { }
 
   /// Total value of the accumulator
-  size_type total () const noexcept { return _total.value(); }
+  size_type total () const noexcept { return _total.load(acquire); }
 
   /// Recent addition to the accumulator
   size_type recent() const noexcept { return _recent; }
 
   /// Reset the counter of recent addition
-  void reset_recent() noexcept { _recent = 0; }
+  void reset_recent() noexcept { _recent = 0u; }
 
   ///
   /// Increase the accumulator, as the only thread doing so
   ///
   /// @param amount Amount to increase the accumulator
   ///
+  /// When only one thread updates the accumulator, it does not need
+  /// to perform an atomic fetch_add.
+  ///
   void increase_weak(size_type amount) noexcept {
     increase_common(amount);
-    _total.increase_weak(amount);
+    _total.store(total() + amount, release);
   }
 
   ///
@@ -67,10 +71,21 @@ struct recent_accumulator {
   ///
   /// @param amount Amount to increase the accumulator
   ///
+  /// When several threads may be updating the accumulator, an atomic
+  /// fetch_add is needed.  However, this implies stronger ordering
+  /// /// than we need on some architectures.
+  ///
   void increase_strong(size_type amount) noexcept {
     increase_common(amount);
-    _total.increase_strong(amount);
+    _total.fetch_add(amount, acq_rel);
   }
+
+  void wait(size_type old,
+      std::memory_order order = seq_cst) const noexcept {
+    _total.wait(old, order);
+  }
+  void notify_one() noexcept { _total.notify_one(); }
+  void notify_all() noexcept { _total.notify_all(); }
 
 private:
 
@@ -90,8 +105,8 @@ private:
     _recent += amount;
   }
 
-                      size_type  _recent; ///< Recent number
-  acq_rel_accumulator<size_type> _total ; ///< Total number
+              size_type  _recent; ///< Recent number
+  std::atomic<size_type> _total;  ///< Total number
 };
 
 }
