@@ -1,7 +1,7 @@
 #ifndef ARR_BUFFER_TRANSFER_HPP
 #define ARR_BUFFER_TRANSFER_HPP
 //
-// Copyright (c) 2013, 2021
+// Copyright (c) 2013, 2021, 2023
 // Kyle Markley.  All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -49,15 +49,20 @@ struct buffer_transfer {
 
   buffer_transfer(
       buffer_base& base,
-      buffer_direction<size_type>& direction) noexcept
+      buffer_direction<size_type>& direction,
+      wake_policy policy) noexcept
     : _base(base)
     , _direction(direction)
     , _current(_base.elements + _direction.offset())
     , _begin(_current)
+    , _policy(policy)
   { }
 
   ~buffer_transfer() {
-    _direction.increase_weak(B::as_size(_current - _begin), _base.capacity());
+    _direction.increase_weak(
+        B::as_size(_current - _begin),
+        _base.capacity(),
+        _policy);
   }
 
   template <typename S = size_type, typename V = value_type>
@@ -125,6 +130,7 @@ struct buffer_transfer {
   buffer_direction<size_type>& _direction;
         pointer                _current;
   const pointer                _begin;
+  wake_policy                  _policy;
 };
 
 }

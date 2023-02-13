@@ -1,7 +1,7 @@
 #ifndef ARR_BUFFER_DIRECTION_HPP
 #define ARR_BUFFER_DIRECTION_HPP
 //
-// Copyright (c) 2013, 2021
+// Copyright (c) 2013, 2021, 2023
 // Kyle Markley.  All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -30,8 +30,11 @@
 //
 
 #include "arr/recent_accumulator.hpp"
+#include <atomic>
 
 namespace arr {
+
+enum class wake_policy { one, all };
 
 ///
 /// \ingroup buffers
@@ -39,13 +42,15 @@ namespace arr {
 ///
 template <typename T>
 struct buffer_direction : private recent_accumulator<T> {
+  using base = recent_accumulator<T>;
   using size_type = T;
+  using enum std::memory_order;
 
-  constexpr buffer_direction() noexcept : _offset(0) { }
+  constexpr buffer_direction() noexcept : _offset(0u) { }
 
-  using recent_accumulator<T>::total;
-  using recent_accumulator<T>::recent;
-  using recent_accumulator<T>::reset_recent;
+  using base::total;
+  using base::recent;
+  using base::reset_recent;
 
   /// Buffer storage offset of next element
   size_type offset() const noexcept { return _offset; }
@@ -58,9 +63,13 @@ struct buffer_direction : private recent_accumulator<T> {
   ///
   /// \c num must not be greater than \c wrap.
   ///
-  void increase_weak(size_type num, size_type wrap) noexcept {
+  void increase_weak(
+      size_type num,
+      size_type wrap,
+      wake_policy policy) noexcept {
     increase_common(num, wrap);
-    recent_accumulator<T>::increase_weak(num);
+    base::increase_weak(num);
+    notify_common(policy);
   }
 
   ///
@@ -71,10 +80,23 @@ struct buffer_direction : private recent_accumulator<T> {
   ///
   /// \c num must not be greater than \c wrap.
   ///
-  void increase_strong(size_type num, size_type wrap) noexcept {
+  void increase_strong(
+      size_type num,
+      size_type wrap,
+      wake_policy policy) noexcept {
     increase_common(num, wrap);
-    recent_accumulator<T>::increase_strong(num);
+    base::increase_strong(num);
+    notify_common(policy);
   }
+
+  void wait(size_type old = total(),
+      std::memory_order order = seq_cst) noexcept {
+    _waiters.fetch_add(1u, acq_rel);
+    base::wait(old, order);
+    _waiters.fetch_sub(1u, acq_rel);
+  }
+
+  size_type waiters() const noexcept { return _waiters; }
 
 private:
 
@@ -91,7 +113,21 @@ private:
     if (_offset >= wrap) _offset -= wrap;
   }
 
-  size_type       _offset;    ///< Offset within the buffer
+  void notify_common(wake_policy policy) noexcept {
+    if (_waiters.load(acquire)) {
+      switch (policy) {
+        case wake_policy::one:
+          base::notify_one();
+          break;
+        case wake_policy::all:
+          base::notify_all();
+          break;
+      }
+    }
+  }
+
+              size_type  _offset;  ///< Offset within the buffer
+  std::atomic<size_type> _waiters; ///< Number of waiters
 };
 
 }

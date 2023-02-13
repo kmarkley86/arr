@@ -1,7 +1,7 @@
 #ifndef ARR_FIFO_HPP
 #define ARR_FIFO_HPP
 //
-// Copyright (c) 2013, 2015, 2016, 2021
+// Copyright (c) 2013, 2015, 2016, 2021, 2023
 // Kyle Markley.  All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -56,9 +56,10 @@ namespace arr {
 /// transferred before the exception is available from \c last_read_size and
 /// \c last_write_size.
 ///
-template <typename T, unsigned cacheline_size = 64u,
+template <typename T, unsigned align = 64u,
          typename A = std::allocator<T>>
 struct fifo : private buffer_base<T,A> {
+  using base = buffer_base<T,A>;
   using value_type = T;
   using allocator_type = A;
   using self_t = fifo;
@@ -69,9 +70,50 @@ struct fifo : private buffer_base<T,A> {
   using const_reference = const value_type&;
   using direction_data = buffer_direction<size_type>;
 
-  using buffer_base<T,A>::buffer_base;
+  fifo(
+      size_type count,
+      wake_policy policy = wake_policy::all,
+      const allocator_type& alloc = allocator_type())
+    : base(count, alloc)
+    , _policy(policy)
+  { }
   ~fifo() { clear(); }
-  using buffer_base<T,A>::get_allocator;
+  using base::get_allocator;
+
+  struct debug_info {
+    size_type write_total;
+    size_type write_waiting;
+    size_type read_total;
+    size_type read_waiting;
+    debug_info(const fifo& data)
+      : write_total(data.write_total())
+      , write_waiting(data._write.waiters())
+      , read_total(data.read_total())
+      , read_waiting(data._read.waiters())
+    { }
+  };
+  debug_info get_debug_info() const {
+    return {*this};
+  }
+
+  auto  read_total() const noexcept { return  _read.total(); }
+  auto write_total() const noexcept { return _write.total(); }
+  void wait_for_write(size_type old,
+      std::memory_order order = std::memory_order::seq_cst) noexcept {
+    _write.wait(old, order);
+  }
+  void wait_for_write(
+      std::memory_order order = std::memory_order::seq_cst) noexcept {
+    _write.wait(read_total(), order);
+  }
+  void wait_for_read(size_type old,
+      std::memory_order order = std::memory_order::seq_cst) noexcept {
+    _read.wait(old, order);
+  }
+  void wait_for_read(
+      std::memory_order order = std::memory_order::seq_cst) noexcept {
+    _read.wait(write_total() - capacity(), order);
+  }
 
   ///
   /// @name Iterators
@@ -204,14 +246,14 @@ struct fifo : private buffer_base<T,A> {
     return {
       elements + _read.offset(),
       elements, elements+capacity(),
-      static_cast<bool>(_read.total()/capacity())
+      static_cast<bool>(read_total()/capacity())
     };
   }
           const_iterator   begin() const noexcept {
     return {
       elements + _read.offset(),
       elements, elements+capacity(),
-      static_cast<bool>(_read.total()/capacity())
+      static_cast<bool>(read_total()/capacity())
     };
   }
 
@@ -219,7 +261,7 @@ struct fifo : private buffer_base<T,A> {
     return {
       elements + _write.offset(),
       elements, elements+capacity(),
-      static_cast<bool>(_write.total()/capacity())
+      static_cast<bool>(write_total()/capacity())
     };
   }
 
@@ -227,7 +269,7 @@ struct fifo : private buffer_base<T,A> {
     return {
       elements + _write.offset(),
       elements, elements+capacity(),
-      static_cast<bool>(_write.total()/capacity())
+      static_cast<bool>(write_total()/capacity())
     };
   }
 
@@ -273,9 +315,9 @@ struct fifo : private buffer_base<T,A> {
   ///
   bool      empty() const noexcept { return size() == 0; }
   bool       full() const noexcept { return size() == capacity(); }
-  size_type  size() const noexcept { return _write.total() - _read.total(); }
-  using buffer_base<T,A>::max_size;
-  using buffer_base<T,A>::capacity;
+  size_type  size() const noexcept { return write_total() - read_total(); }
+  using base::max_size;
+  using base::capacity;
   size_type space_used() const noexcept { return size(); }
   size_type space_free() const noexcept { return capacity() - size(); }
   /// @}
@@ -288,16 +330,16 @@ struct fifo : private buffer_base<T,A> {
   /// emplace onto a full fifo.
   ///
   void clear() { discard(space_used()); }
-  void pop() { contiguous_discard(1); }
-  void push(const value_type&  value) { contiguous_write(&value, 1); }
+  void pop() { contiguous_discard(1u); }
+  void push(const value_type&  value) { contiguous_write(&value, 1u); }
   void push(      value_type&& value) {
-    contiguous_write(std::make_move_iterator(&value), 1);
+    contiguous_write(std::make_move_iterator(&value), 1u);
   }
   template <typename ... Args>
   void emplace(Args&&... args) {
     auto ptr = elements + _write.offset();
     allocator_traits::construct(allocator, ptr, std::forward<Args>(args)...);
-    _write.increase_weak(1, capacity());
+    _write.increase_weak(1u, capacity(), _policy);
   }
   /// @}
 
@@ -345,7 +387,7 @@ struct fifo : private buffer_base<T,A> {
   ///
   template <typename output_iterator>
   output_iterator read(output_iterator dst, const output_iterator& last) {
-    return read(dst, buffer_base<T,A>::as_size(std::distance(dst, last)));
+    return read(dst, base::as_size(std::distance(dst, last)));
   }
 
   ///
@@ -373,7 +415,7 @@ struct fifo : private buffer_base<T,A> {
   ///
   template <typename input_iterator>
   input_iterator write(input_iterator src, const input_iterator& last) {
-    return write(src, buffer_base<T,A>::as_size(std::distance(src, last)));
+    return write(src, base::as_size(std::distance(src, last)));
   }
 
   private:
@@ -393,39 +435,34 @@ struct fifo : private buffer_base<T,A> {
 
   /// Discard contiguous elements
   void contiguous_discard(size_type num) {
-    buffer_transfer<buffer_base<T,A>> xfer(*this, _read);
+    buffer_transfer<base> xfer(*this, _read, _policy);
     xfer.discard(num);
   }
 
   /// Read contiguous elements
   template <typename output_iterator>
   output_iterator contiguous_read(output_iterator dst, size_type num) {
-    buffer_transfer<buffer_base<T,A>> xfer(*this, _read);
+    buffer_transfer<base> xfer(*this, _read, _policy);
     return xfer.read(dst, num);
   }
 
   /// Write contiguous elements
   template <typename input_iterator>
   input_iterator contiguous_write(input_iterator src, size_type num) {
-    buffer_transfer<buffer_base<T,A>> xfer(*this, _write);
+    buffer_transfer<base> xfer(*this, _write, _policy);
     return xfer.write(src, num);
   }
 
-  using buffer_base<T,A>::allocator;
-  using buffer_base<T,A>::elements;
-#if 0
-  // FIXME
-  alignas(cacheline_size) direction_data _read;
-  alignas(cacheline_size) direction_data _write;
-#else
-  alignas(64) direction_data _read;
-  alignas(64) direction_data _write;
-#endif
+  using base::allocator;
+  using base::elements;
+  wake_policy _policy;
+  alignas(align) direction_data _read;
+  alignas(align) direction_data _write;
 };
 
-template <typename T, unsigned cacheline_size, typename A>
-typename fifo<T,cacheline_size,A>::size_type
-fifo<T,cacheline_size,A>::discard(size_type num) {
+template <typename T, unsigned align, typename A>
+typename fifo<T,align,A>::size_type
+fifo<T,align,A>::discard(size_type num) {
   _read.reset_recent();
   num = std::min(num, space_used());
   auto xfer_size = std::min(num, next_read_wrap());
@@ -436,10 +473,10 @@ fifo<T,cacheline_size,A>::discard(size_type num) {
   return last_read_size();
 }
 
-template <typename T, unsigned cacheline_size, typename A>
+template <typename T, unsigned align, typename A>
 template <typename output_iterator>
 output_iterator
-fifo<T,cacheline_size,A>::read(output_iterator dst, size_type num) {
+fifo<T,align,A>::read(output_iterator dst, size_type num) {
   _read.reset_recent();
   num = std::min(num, space_used());
   auto xfer_size = std::min(num, next_read_wrap());
@@ -450,10 +487,10 @@ fifo<T,cacheline_size,A>::read(output_iterator dst, size_type num) {
   return dst;
 }
 
-template <typename T, unsigned cacheline_size, typename A>
+template <typename T, unsigned align, typename A>
 template <typename input_iterator>
 input_iterator
-fifo<T,cacheline_size,A>::write(input_iterator src, size_type num) {
+fifo<T,align,A>::write(input_iterator src, size_type num) {
   _write.reset_recent();
   num = std::min(num, space_free());
   auto xfer_size = std::min(num, next_write_wrap());

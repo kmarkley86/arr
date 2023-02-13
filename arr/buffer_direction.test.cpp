@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2013, 2021
+// Copyright (c) 2013, 2021, 2023
 // Kyle Markley.  All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -32,6 +32,8 @@
 
 UNIT_TEST_MAIN
 
+using enum arr::wake_policy;
+
 SUITE(base) {
 
   TEST(construct) {
@@ -43,11 +45,11 @@ SUITE(base) {
 
   TEST(increase_weak) {
     arr::buffer_direction<unsigned> d;
-    d.increase_weak(5u, 6u);
+    d.increase_weak(5u, 6u, all);
     CHECK_EQUAL(5u, d.total());
     CHECK_EQUAL(5u, d.recent());
     CHECK_EQUAL(5u, d.offset());
-    d.increase_weak(3u, 6u);
+    d.increase_weak(3u, 6u, all);
     CHECK_EQUAL(8u, d.total());
     CHECK_EQUAL(8u, d.recent());
     CHECK_EQUAL(2u, d.offset());
@@ -55,7 +57,7 @@ SUITE(base) {
     CHECK_EQUAL(8u, d.total());
     CHECK_EQUAL(0u, d.recent());
     CHECK_EQUAL(2u, d.offset());
-    d.increase_weak(5u, 6u);
+    d.increase_weak(5u, 6u, all);
     CHECK_EQUAL(13u, d.total());
     CHECK_EQUAL( 5u, d.recent());
     CHECK_EQUAL( 1u, d.offset());
@@ -63,11 +65,11 @@ SUITE(base) {
 
   TEST(increase_strong) {
     arr::buffer_direction<unsigned> d;
-    d.increase_strong(5u, 6u);
+    d.increase_strong(5u, 6u, all);
     CHECK_EQUAL(5u, d.total());
     CHECK_EQUAL(5u, d.recent());
     CHECK_EQUAL(5u, d.offset());
-    d.increase_strong(3u, 6u);
+    d.increase_strong(3u, 6u, all);
     CHECK_EQUAL(8u, d.total());
     CHECK_EQUAL(8u, d.recent());
     CHECK_EQUAL(2u, d.offset());
@@ -75,7 +77,7 @@ SUITE(base) {
     CHECK_EQUAL(8u, d.total());
     CHECK_EQUAL(0u, d.recent());
     CHECK_EQUAL(2u, d.offset());
-    d.increase_strong(5u, 6u);
+    d.increase_strong(5u, 6u, all);
     CHECK_EQUAL(13u, d.total());
     CHECK_EQUAL( 5u, d.recent());
     CHECK_EQUAL( 1u, d.offset());

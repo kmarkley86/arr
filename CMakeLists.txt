@@ -230,7 +230,7 @@ foreach(item ${arr_tests})
 endforeach()
 
 find_package(Threads REQUIRED)
-target_link_libraries(arr-fifo_concurrency PRIVATE Threads::Threads)
+target_link_libraries(arr-fifo_concurrency PRIVATE ${CMAKE_THREAD_LIBS_INIT})
 
 target_compile_options(arr-swap_macros PRIVATE -Wno-self-move -Wno-self-assign-overloaded)
 target_compile_options(arr-context_exception PRIVATE -Wno-self-move -Wno-self-assign-overloaded)
