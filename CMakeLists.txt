@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.15)
 include_guard(GLOBAL)
 set(ver_major 2)
 set(ver_minor 0)
-set(ver_patch 1)
+set(ver_patch 2)
 set(version ${ver_major}.${ver_minor}.${ver_patch})
 set(CMAKE_USER_MAKE_RULES_OVERRIDE ${CMAKE_CURRENT_SOURCE_DIR}/configs.cmake)
 project(kmarkley-arr

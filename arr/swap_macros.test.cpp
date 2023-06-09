@@ -66,8 +66,6 @@ struct foo {
   }
 };
 
-SPECIALIZE_STD_SWAP(foo)
-
 SUITE(constructors) {
 
   TEST(default) {
@@ -93,7 +91,7 @@ SUITE(constructors) {
   TEST(move) {
     sentinel s;
     foo x(1);
-    foo y(move(x));
+    foo y(std::move(x));
     CHECK_EQUAL(0, x.value);
     CHECK_EQUAL(1, y.value);
   }
@@ -170,7 +168,7 @@ SUITE(assignment) {
     sentinel s;
     foo x(1);
     foo y(2);
-    y = move(x);
+    y = std::move(x);
     CHECK_EQUAL(2, x.value);
     CHECK_EQUAL(1, y.value);
   }
@@ -185,7 +183,7 @@ SUITE(assignment) {
   TEST(self_assign_move) {
     sentinel s;
     foo x(1);
-    x = move(x);
+    x = std::move(x);
     CHECK_EQUAL(1, x.value);
   }
 
@@ -201,11 +199,11 @@ SUITE(try_noexcept) {
     cout << "ctor() " << noexcept(foo()) << endl;
     cout << "ctor(x) " << noexcept(foo(1)) << endl;
     cout << "copy_ctor " << noexcept(foo(x)) << endl;
-    cout << "move_ctor " << noexcept(foo(move(x))) << endl;
+    cout << "move_ctor " << noexcept(foo(std::move(x))) << endl;
     cout << "copy_assign " << noexcept(x = y) << endl;
-    cout << "move_assign " << noexcept(x = move(y)) << endl;
+    cout << "move_assign " << noexcept(x = std::move(y)) << endl;
     cout << "member_swap " << noexcept(x.swap(y)) << endl;
-    cout << "rvalue_swap " << noexcept(x.swap(move(y))) << endl;
+    cout << "rvalue_swap " << noexcept(x.swap(std::move(y))) << endl;
     cout << "friend_swap " << noexcept(swap(x, y)) << endl;
     cout << "std_swap " << noexcept(std::swap(x, y)) << endl;
     cout << endl;

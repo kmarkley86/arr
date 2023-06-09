@@ -78,7 +78,7 @@ struct foo_e : public foo {
     if (_throw_copy) throw false;
   }
   foo_e(foo_e&& peer)
-    : foo(move(peer))
+    : foo(std::move(peer))
     , _throw_copy(peer._throw_copy)
     , _throw_assign(peer._throw_assign) {
     if (_throw_copy) throw false;
@@ -91,7 +91,7 @@ struct foo_e : public foo {
     return *this;
   }
   foo_e& operator=(foo_e&& peer) {
-    foo::operator=(move(peer));
+    foo::operator=(std::move(peer));
     _throw_copy = peer._throw_copy;
     _throw_assign = peer._throw_assign;
     if (_throw_assign) throw false;

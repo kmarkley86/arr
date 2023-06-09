@@ -95,18 +95,6 @@ friend void swap(T&& x, T&  y) { x.swap(y); } \
 friend void swap(T&  x, T&& y) { x.swap(y); } \
 friend void swap(T&& x, T&& y) { x.swap(y); }
 
-///
-/// std::swap specialization
-///
-/// Specialize std::swap in terms of friend swap.
-/// Obsolete in C++11 due to §17.6.3.2/3 but not all compilers implement
-/// the argument-dependent lookup it specifies, so this is still useful.
-///
-/// Note that this macro is only useful for non-template classes.
-///
-#define SPECIALIZE_STD_SWAP(T) \
-namespace std { template<> inline void swap(T& x, T& y) { swap(x, y); } }
-
 /// @}
 
 #endif
