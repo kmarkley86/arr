@@ -41,7 +41,7 @@ namespace arr {
 ///
 /// minimum
 ///
-/// Reference: C++11 standard §25.4.7
+/// Reference: C++11 standard [alg.min.max]
 ///
 /// Requires: Type T is LessThanComparable
 ///
@@ -81,7 +81,7 @@ noexcept(noexcept(std::declval<      T&>() < std::declval<      T&>())) {
 ///
 /// maximum
 ///
-/// Reference: C++11 standard §25.4.7
+/// Reference: C++11 standard [alg.min.max]
 ///
 /// Requires: Type T is LessThanComparable
 ///
