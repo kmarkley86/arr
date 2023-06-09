@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2012, 2013, 2021
+// Copyright (c) 2012, 2013, 2021, 2023
 // Kyle Markley.  All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -42,7 +42,8 @@ temp_dir::temp_dir()
   : dirname(new char[filename_template::size])
 {
   static_assert(filename_template::size, "Error in filename template size");
-  std::strcpy(dirname.get(), filename_template::name);
+  std::strncpy(
+      dirname.get(), filename_template::name, filename_template::size);
   wrap::mkdtemp(SOURCE_CONTEXT, dirname.get());
 }
 

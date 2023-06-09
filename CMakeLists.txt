@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.15)
 include_guard(GLOBAL)
 set(ver_major 2)
 set(ver_minor 0)
-set(ver_patch 0)
+set(ver_patch 1)
 set(version ${ver_major}.${ver_minor}.${ver_patch})
 set(CMAKE_USER_MAKE_RULES_OVERRIDE ${CMAKE_CURRENT_SOURCE_DIR}/configs.cmake)
 project(kmarkley-arr
@@ -65,7 +65,7 @@ if     (${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang" OR
   )
 endif()
 if     (${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
-  if(ENABLE_SA)
+  if(${ENABLE_SA})
     set(CMAKE_CXX_CLANG_TIDY "clang-tidy")
   endif()
 elseif (${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
@@ -224,9 +224,11 @@ arr/filter_stream.test.cpp
 arr/child.test.cpp
 arr/execute.test.cpp
 )
+add_custom_target(arr-tests)
 foreach(item ${arr_tests})
   get_filename_component(name ${item} NAME_WE)
   define_simple_test(arr-${name} ${item} arr)
+  add_dependencies(arr-tests arr-${name})
 endforeach()
 
 find_package(Threads REQUIRED)

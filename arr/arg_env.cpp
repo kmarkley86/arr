@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2012, 2021, 2022
+// Copyright (c) 2012, 2021, 2022, 2023
 // Kyle Markley.  All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -34,10 +34,6 @@ namespace arr {
 
 arguments::arguments(const char * const argv[]) {
   if (argv) {
-    size_t elements = 0;
-    for (size_t i=0; argv[i]; ++i) {
-      ++elements;
-    }
     for (size_t i=0; argv[i]; ++i) {
       emplace_back(argv[i]);
     }

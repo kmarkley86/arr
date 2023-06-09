@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2012, 2013, 2015, 2021
+// Copyright (c) 2012, 2013, 2015, 2021, 2023
 // Kyle Markley.  All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -39,7 +39,7 @@
 #include <string.h>
 inline dirent make_dirent(const char * name, decltype(dirent::d_type) type) {
   dirent entry;
-  strcpy(entry.d_name, name);
+  strncpy(entry.d_name, name, sizeof(entry.d_name));
   entry.d_type = type;
   return entry;
 }
