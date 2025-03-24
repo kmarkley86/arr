@@ -1,7 +1,7 @@
 #ifndef ARR_EXECUTE_HPP
 #define ARR_EXECUTE_HPP
 //
-// Copyright (c) 2012, 2013, 2021
+// Copyright (c) 2012, 2013, 2021, 2025
 // Kyle Markley.  All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -32,6 +32,7 @@
 #include "arr/process_id.hpp"
 #include "arr/child.hpp"
 #include "arr/fd_stream.hpp"
+#include "arr/arg_env.hpp"
 #include <utility>
 
 namespace arr {
@@ -48,6 +49,7 @@ struct execute
   : public wrap::process_id
 {
   execute(const char * const argv[]);
+  execute(const arguments& argv);
 };
 
 ///
@@ -63,6 +65,7 @@ struct execute_capture
   , public arr::fd_istream
 {
   execute_capture(const char * const argv[], bool capture_stderr = false);
+  execute_capture(const arguments& argv, bool capture_stderr = false);
 };
 
 ///
@@ -77,6 +80,10 @@ struct execute_log_fd
 {
   execute_log_fd(
       const char * const argv[],
+      wrap::file_descriptor::fd_t descriptor,
+      bool log_stderr = false);
+  execute_log_fd(
+      const arguments& argv,
       wrap::file_descriptor::fd_t descriptor,
       bool log_stderr = false);
 };
@@ -94,6 +101,10 @@ struct execute_log_file
 {
   execute_log_file(
       const char * const argv[],
+      const char * path, int flags, mode_t mode,
+      bool log_stderr = false);
+  execute_log_file(
+      const arguments& argv,
       const char * path, int flags, mode_t mode,
       bool log_stderr = false);
 };
@@ -114,6 +125,7 @@ struct execute_io
   , public wrap::process_id
 {
   execute_io(const char * const argv[], bool capture_stderr = false);
+  execute_io(const arguments& argv, bool capture_stderr = false);
   //
   // Must use containment, not inheritance, due to virtual inheritance
   // from basic_ios in both istream and ostream.

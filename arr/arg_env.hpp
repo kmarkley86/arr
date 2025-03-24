@@ -1,7 +1,7 @@
 #ifndef ARR_ARG_ENV_HPP
 #define ARR_ARG_ENV_HPP
 //
-// Copyright (c) 2012, 2021
+// Copyright (c) 2012, 2021, 2025
 // Kyle Markley.  All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -53,8 +53,7 @@ struct arguments : std::list<std::string> {
   arguments(const char * const argv[] = nullptr);
   arguments(const arguments& peer) : std::list<std::string>(peer) { }
   arguments& operator=(arguments peer);
-  operator const char * const *() const;
-  mutable std::unique_ptr<const char *[]> compatible;
+  std::unique_ptr<const char *[]> as_argv() const;
   friend void swap(arguments&, arguments&) noexcept;
 };
 
@@ -71,6 +70,8 @@ struct environment : std::map<std::string, std::string> {
   environment(const char * const envp[] = ::environ);
   environment(const environment& peer)
     : std::map<std::string, std::string>(peer) { }
+  // Warning: this is a very unsafe interface.  This object must not be
+  // modified while the pointer returned by this conversion is in use.
   operator const char * const *() const;
   mutable std::vector<std::string> collapsed;
   mutable std::unique_ptr<const char *[]> compatible;

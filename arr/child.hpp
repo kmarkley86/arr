@@ -1,7 +1,7 @@
 #ifndef ARR_CHILD_HPP
 #define ARR_CHILD_HPP
 //
-// Copyright (c) 2012, 2021
+// Copyright (c) 2012, 2021, 2025
 // Kyle Markley.  All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -31,6 +31,7 @@
 
 #include "arr/unistd.hpp"
 #include "arr/pipe.hpp"
+#include "arr/arg_env.hpp"
 
 namespace arr {
 
@@ -57,6 +58,12 @@ namespace arr {
 ///
 pid_t spawn_stdio(
     const char * const argv[],
+    const char * const envp[] = ::environ,
+    int fd_stdin  = STDIN_FILENO,
+    int fd_stdout = STDOUT_FILENO,
+    int fd_stderr = STDERR_FILENO);
+pid_t spawn_stdio(
+    const arguments& argv,
     const char * const envp[] = ::environ,
     int fd_stdin  = STDIN_FILENO,
     int fd_stdout = STDOUT_FILENO,

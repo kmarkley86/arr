@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2012, 2013, 2021
+// Copyright (c) 2012, 2013, 2021, 2025
 // Kyle Markley.  All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -103,6 +103,14 @@ pid_t spawn_stdio(
     child_stdio(argv, envp, fd_stdin, fd_stdout, fd_stderr);
   }
   return pid;
+}
+
+pid_t spawn_stdio(
+    const arguments& argv,
+    const char * const envp[],
+    int fd_stdin, int fd_stdout, int fd_stderr) {
+  return spawn_stdio(argv.as_argv().get(), envp,
+      fd_stdin, fd_stdout, fd_stderr);
 }
 
 }

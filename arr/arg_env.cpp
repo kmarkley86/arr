@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2012, 2021, 2022, 2023
+// Copyright (c) 2012, 2021, 2022, 2023, 2025
 // Kyle Markley.  All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -40,15 +40,16 @@ arguments::arguments(const char * const argv[]) {
   }
 }
 
-arguments::operator const char * const *() const {
+std::unique_ptr<const char *[]> arguments::as_argv() const {
   auto num_elements = size();
-  compatible.reset(new const char *[num_elements+1]());
+  std::unique_ptr<const char *[]> result(
+      new const char *[num_elements+1]());
   size_t n=0;
   for (auto& i : *this) {
-    compatible[n++] = i.c_str();
+    result[n++] = i.c_str();
   }
-  compatible[num_elements] = nullptr;
-  return compatible.get();
+  result[num_elements] = nullptr;
+  return result;
 }
 
 arguments& arguments::operator=(arguments peer) {
@@ -61,7 +62,6 @@ void swap(arguments& x, arguments& y) noexcept {
   using base = std::list<std::string>;
   using std::swap;
   swap(static_cast<base&>(x), static_cast<base&>(y));
-  swap(x.compatible, y.compatible);
 }
 
 

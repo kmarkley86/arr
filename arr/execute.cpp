@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2012, 2013, 2021
+// Copyright (c) 2012, 2013, 2021, 2025
 // Kyle Markley.  All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -37,6 +37,11 @@ execute::execute(const char * const argv[])
 {
 }
 
+execute::execute(const arguments& argv)
+  : execute(argv.as_argv().get())
+{
+}
+
 execute_capture::execute_capture(
     const char * const argv[], bool capture_stderr)
   : arr::read_pipe()
@@ -47,6 +52,11 @@ execute_capture::execute_capture(
   , arr::fd_istream(parent())
 {
   close_child();
+}
+execute_capture::execute_capture(
+    const arguments& argv, bool capture_stderr)
+  : execute_capture(argv.as_argv().get(), capture_stderr)
+{
 }
 
 execute_log_fd::execute_log_fd(
@@ -59,6 +69,13 @@ execute_log_fd::execute_log_fd(
         log_stderr ? descriptor : STDERR_FILENO))
 {
 }
+execute_log_fd::execute_log_fd(
+    const arguments& argv,
+    wrap::file_descriptor::fd_t descriptor,
+    bool log_stderr)
+  : execute_log_fd(argv.as_argv().get(), descriptor, log_stderr)
+{
+}
 
 execute_log_file::execute_log_file(
     const char * const argv[],
@@ -68,6 +85,13 @@ execute_log_file::execute_log_file(
   , execute_log_fd(argv, child().get(), log_stderr)
 {
   close_child();
+}
+execute_log_file::execute_log_file(
+    const arguments& argv,
+    const char * path, int flags, mode_t mode,
+    bool log_stderr)
+  : execute_log_file(argv.as_argv().get(), path, flags, mode, log_stderr)
+{
 }
 
 execute_io::execute_io(
@@ -83,6 +107,11 @@ execute_io::execute_io(
 {
   arr::read_pipe::close_child();
   arr::write_pipe::close_child();
+}
+execute_io::execute_io(
+    const arguments& argv, bool capture_stderr)
+  : execute_io(argv.as_argv().get(), capture_stderr)
+{
 }
 
 }

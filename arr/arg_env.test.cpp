@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2012, 2013, 2021, 2022
+// Copyright (c) 2012, 2013, 2021, 2022, 2025
 // Kyle Markley.  All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,8 @@ SUITE(try_arguments) {
   TEST(void) {
     arguments a;
     CHECK_EQUAL(static_cast<decltype(a.size())>(0), a.size());
-    const char * const * p = a;
+    auto temp = a.as_argv();
+    const char * const * p = temp.get();
     CHECK_EQUAL(voidify(nullptr), voidify(p[0]));
   }
 
@@ -52,7 +53,8 @@ SUITE(try_arguments) {
     const char * const argv[] = { nullptr };
     arguments a(argv);
     CHECK_EQUAL(static_cast<decltype(a.size())>(0), a.size());
-    const char * const * p = a;
+    auto temp = a.as_argv();
+    const char * const * p = temp.get();
     CHECK_EQUAL(voidify(nullptr), voidify(p[0]));
   }
 
@@ -60,7 +62,8 @@ SUITE(try_arguments) {
     const char * const argv[] = { "string", nullptr };
     arguments a(argv);
     CHECK_EQUAL(static_cast<decltype(a.size())>(1), a.size());
-    const char * const * p = a;
+    auto temp = a.as_argv();
+    const char * const * p = temp.get();
     CHECK_STRINGS("string", p[0]);
     CHECK_EQUAL(voidify(nullptr), voidify(p[1]));
   }
@@ -69,7 +72,8 @@ SUITE(try_arguments) {
     const char * const argv[] = { "string", "arg1", nullptr };
     arguments a(argv);
     CHECK_EQUAL(static_cast<decltype(a.size())>(2), a.size());
-    const char * const * p = a;
+    auto temp = a.as_argv();
+    const char * const * p = temp.get();
     CHECK_STRINGS("string", p[0]);
     CHECK_STRINGS("arg1"  , p[1]);
     CHECK_EQUAL(voidify(nullptr), voidify(p[2]));
@@ -80,7 +84,8 @@ SUITE(try_arguments) {
     arguments a(argv);
     a.emplace_front("process");
     CHECK_EQUAL(static_cast<decltype(a.size())>(3), a.size());
-    const char * const * p = a;
+    auto temp = a.as_argv();
+    const char * const * p = temp.get();
     CHECK_STRINGS("process", p[0]);
     CHECK_STRINGS("arg1"   , p[1]);
     CHECK_STRINGS("arg2"   , p[2]);
@@ -93,8 +98,10 @@ SUITE(try_arguments) {
     arguments x(X);
     arguments y(Y);
     swap(x, y);
-    const char * const * from_x = x;
-    const char * const * from_y = y;
+    auto temp_x = x.as_argv();
+    auto temp_y = y.as_argv();
+    const char * const * from_x = temp_x.get();
+    const char * const * from_y = temp_y.get();
     CHECK_STRINGS("c", from_x[0]);
     CHECK_STRINGS("a", from_y[0]);
   }
