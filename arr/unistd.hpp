@@ -1,7 +1,7 @@
 #ifndef WRAP_UNISTD_HPP
 #define WRAP_UNISTD_HPP
 //
-// Copyright (c) 2012, 2014, 2021
+// Copyright (c) 2012, 2014, 2021, 2026
 // Kyle Markley.  All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -117,9 +117,14 @@ extern std::chrono::microseconds fork_retry_delay;
 void access(arr::source_context, const char * path, int amode);
 
 ///
+/// Wrapper for read(2)
+///
+ssize_t read(arr::source_context, int d, void *buf, size_t nbytes);
+
+///
 /// Wrapper for write(2)
 ///
-size_t write(arr::source_context, int d, const void *buf, size_t nbytes);
+ssize_t write(arr::source_context, int d, const void *buf, size_t nbytes);
 
 ///
 /// Wrapper for unlink(2)

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2012, 2014, 2021
+// Copyright (c) 2012, 2014, 2021, 2026
 // Kyle Markley.  All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -116,10 +116,16 @@ void access(arr::source_context context, const char * path, int amode) {
   if (0 != r) throw arr::path_exception(context, __func__, path);
 }
 
-size_t write(arr::source_context context, int d, const void *buf, size_t nbytes) {
+ssize_t read(arr::source_context context, int d, void *buf, size_t nbytes) {
+  auto r = ::read(d, buf, nbytes);
+  if (-1 == r) throw arr::syscall_exception(context, __func__);
+  return r;
+}
+
+ssize_t write(arr::source_context context, int d, const void *buf, size_t nbytes) {
   auto r = ::write(d, buf, nbytes);
   if (-1 == r) throw arr::syscall_exception(context, __func__);
-  return size_t(r);
+  return r;
 }
 
 void unlink(arr::source_context context, const char * path) {
