@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2012, 2013, 2014, 2021
+// Copyright (c) 2012, 2013, 2014, 2021, 2026
 // Kyle Markley.  All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -140,7 +140,9 @@ SUITE(behavior) {
     rlim.rlim_cur = RLIM_INFINITY;
     rlim.rlim_max = RLIM_INFINITY;
     if (-1 == setrlimit(RLIMIT_CORE, &rlim)) {
-      throw arr::syscall_exception("setrlimit");
+      std::cout << "Cannot execute core dump test:\n";
+      std::cout << arr::syscall_exception("setrlimit").format() << '\n';
+      return;
     }
     arr::arguments a;
     a.push_back(program);
