@@ -1,7 +1,7 @@
 #ifndef ARR_MASK_HPP
 #define ARR_MASK_HPP
 //
-// Copyright (c) 2013, 2021, 2022
+// Copyright (c) 2013, 2021, 2022, 2026
 // Kyle Markley.  All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -188,9 +188,8 @@ constexpr T checked_mask_ordered_pair(unsigned high_bit, unsigned low_bit) {
 /// @param y High or low bit position to make a \c '1'
 /// @return A value of type \c T with bits [x:y] set to \c '1'
 ///
-/// No argument checks are performed.  The result is undefined if high_bit
-/// is less than low_bit.  If high_bit does not exist in type \c T, the mask
-/// will be truncated.
+/// No argument checks are performed.  If the high bit does not exist in
+/// type \c T, the mask will be truncated.
 ///
 template <typename T>
 constexpr T mask_unordered_pair(unsigned x, unsigned y) {

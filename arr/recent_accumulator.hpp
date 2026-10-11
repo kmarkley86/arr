@@ -1,7 +1,7 @@
 #ifndef ARR_RECENT_ACCUMULATOR_HPP
 #define ARR_RECENT_ACCUMULATOR_HPP
 //
-// Copyright (c) 2013, 2021, 2023
+// Copyright (c) 2013, 2021, 2023, 2026
 // Kyle Markley.  All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -73,7 +73,7 @@ struct recent_accumulator {
   ///
   /// When several threads may be updating the accumulator, an atomic
   /// fetch_add is needed.  However, this implies stronger ordering
-  /// /// than we need on some architectures.
+  /// than we need on some architectures.
   ///
   void increase_strong(size_type amount) noexcept {
     increase_common(amount);

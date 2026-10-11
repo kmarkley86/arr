@@ -1,7 +1,7 @@
 #ifndef ARR_FIFO_HPP
 #define ARR_FIFO_HPP
 //
-// Copyright (c) 2013, 2015, 2016, 2021, 2023
+// Copyright (c) 2013, 2015, 2016, 2021, 2023, 2026
 // Kyle Markley.  All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -49,7 +49,7 @@ namespace arr {
 ///
 /// \par Exceptions
 ///
-/// If \c element_type construction and assignment are exception-free,
+/// If \c value_type construction and assignment are exception-free,
 /// and the iterators used in read and write operations are exception-free,
 /// then no exceptions are possible.  Otherwise, the read and write
 /// operations provide the "basic guarantee", and the number of elements
