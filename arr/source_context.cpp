@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2012, 2021
+// Copyright (c) 2012, 2021, 2026
 // Kyle Markley.  All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -28,23 +28,20 @@
 //
 
 #include "arr/source_context.hpp"
+#include <iomanip>
 #include <sstream>
 
 namespace arr {
 
 std::string source_context::context() const {
   std::ostringstream s;
-  if (func) {
-    s << func;
-  }
-  if (func and file) {
-    s << " @ ";
-  }
-  if (file) {
-    s << file;
-  }
+  if (func) s << std::quoted(func);
+  if (func and file) s << " @ ";
+  if (file) s << std::quoted(file);
   if (line) {
-    s << ":" << line;
+    s << '(' << line;
+    if (column) s << ':' << column;
+    s << ')';
   }
   return s.str();
 }

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2012, 2013, 2015, 2021
+// Copyright (c) 2012, 2013, 2015, 2021, 2026
 // Kyle Markley.  All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -84,30 +84,30 @@ SUITE(context) {
   }
   TEST(a) {
     source_context c{func_name, nullptr, 0};
-    CHECK_EQUAL(string("throwing_func"), c.context());
+    CHECK_EQUAL(string(R"("throwing_func")"), c.context());
   }
   TEST(b) {
     source_context c{nullptr, file_name, 0};
-    CHECK_EQUAL(string("filename.cpp"), c.context());
+    CHECK_EQUAL(string(R"("filename.cpp")"), c.context());
   }
   TEST(c) {
     source_context c{nullptr, nullptr, file_line};
-    CHECK_EQUAL(string(":1234"), c.context());
+    CHECK_EQUAL(string(R"((1234))"), c.context());
   }
   TEST(ab) {
     source_context c{func_name, file_name, 0};
-    CHECK_EQUAL(string("throwing_func @ filename.cpp"), c.context());
+    CHECK_EQUAL(string(R"("throwing_func" @ "filename.cpp")"), c.context());
   }
   TEST(bc) {
     source_context c{nullptr, file_name, file_line};
-    CHECK_EQUAL(string("filename.cpp:1234"), c.context());
+    CHECK_EQUAL(string(R"("filename.cpp"(1234))"), c.context());
   }
   TEST(ac) {
     source_context c{func_name, nullptr, file_line};
-    CHECK_EQUAL(string("throwing_func:1234"), c.context());
+    CHECK_EQUAL(string(R"("throwing_func"(1234))"), c.context());
   }
   TEST(abc) {
     source_context c{func_name, file_name, 1234u};
-    CHECK_EQUAL(string("throwing_func @ filename.cpp:1234"), c.context());
+    CHECK_EQUAL(string(R"("throwing_func" @ "filename.cpp"(1234))"), c.context());
   }
 }

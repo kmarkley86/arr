@@ -1,7 +1,7 @@
 #ifndef ARR_SOURCE_CONTEXT_HPP
 #define ARR_SOURCE_CONTEXT_HPP
 //
-// Copyright (c) 2012, 2013, 2021
+// Copyright (c) 2012, 2013, 2021, 2026
 // Kyle Markley.  All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -29,6 +29,8 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //
 
+#include <cstdint>
+#include <source_location>
 #include <string>
 
 namespace arr {
@@ -51,29 +53,37 @@ struct source_context {
   constexpr source_context(
       const char * function_name,
       const char * source_file_name,
-      unsigned source_line_number) noexcept
+      std::uint_least32_t source_line_number,
+      std::uint_least32_t source_column_number = 0u) noexcept
     : func(function_name)
     , file(source_file_name)
     , line(source_line_number)
+    , column(source_column_number)
   {
   }
+
+  constexpr source_context(
+      std::source_location sl = std::source_location::current()) noexcept
+    : func(sl.function_name())
+    , file(sl.file_name())
+    , line(sl.line())
+    , column(sl.column())
+  { }
 
   /// Description of the source code context
   std::string context() const;
 
-  const char * func;    ///< Function name
-  const char * file;    ///< Source file name
-  unsigned     line;    ///< Line number in source file
+  const char * func;          ///< Function name
+  const char * file;          ///< Source file name
+  std::uint_least32_t line;   ///< Line number in source file
+  std::uint_least32_t column; ///< Column number in source file
 };
 
 ///
 /// Macro representing the current source context
 ///
-#if defined(__clang__) || defined(__GNUC__)
-#define SOURCE_CONTEXT arr::source_context{__PRETTY_FUNCTION__, __FILE__, __LINE__}
-#else
-#define SOURCE_CONTEXT arr::source_context{__func__, __FILE__, __LINE__}
-#endif
+#define SOURCE_CONTEXT arr::source_context{std::source_location::current()}
+#define DEFAULT_CONTEXT arr::source_context = std::source_location::current()
 
 /// @}
 
