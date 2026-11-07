@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.15)
 include_guard(GLOBAL)
 set(ver_major 3)
 set(ver_minor 0)
-set(ver_patch 1)
+set(ver_patch 2)
 set(version ${ver_major}.${ver_minor}.${ver_patch})
 set(CMAKE_USER_MAKE_RULES_OVERRIDE ${CMAKE_CURRENT_SOURCE_DIR}/configs.cmake)
 project(kmarkley-arr
@@ -230,6 +230,22 @@ foreach(item ${arr_tests})
   define_simple_test(arr-${name} ${item} arr)
   add_dependencies(arr-tests arr-${name})
 endforeach()
+
+include(CheckCXXSourceCompiles)
+
+check_cxx_source_compiles("
+  #include <cstddef>
+  #if defined(_LIBCPP_VERSION)
+    int main() { return 0; }
+  #else
+    #error \"Not libc++\"
+  #endif
+" CMAKE_USING_LIBCPP)
+
+if(CMAKE_USING_LIBCPP)
+  find_package(Boost REQUIRED CONFIG COMPONENTS iostreams)
+  target_link_libraries(arr PUBLIC Boost::iostreams)
+endif()
 
 find_package(Threads REQUIRED)
 target_link_libraries(arr-fifo_concurrency PRIVATE ${CMAKE_THREAD_LIBS_INIT})

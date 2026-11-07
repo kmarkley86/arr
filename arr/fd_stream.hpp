@@ -1,7 +1,7 @@
 #ifndef ARR_FD_STREAM_HPP
 #define ARR_FD_STREAM_HPP
 //
-// Copyright (c) 2012, 2018, 2021
+// Copyright (c) 2012, 2018, 2021, 2026
 // Kyle Markley.  All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -33,9 +33,8 @@
 #include <istream>
 #include <ostream>
 #ifdef _LIBCPP_VERSION
-#include <cstdio>
-#include <__std_stream>
-#include "arr/syscall_exception.hpp"
+#include <boost/iostreams/stream_buffer.hpp>
+#include <boost/iostreams/device/file_descriptor.hpp>
 #else
 #include <ext/stdio_filebuf.h>
 #endif
@@ -44,50 +43,24 @@ namespace arr {
 
 #ifdef _LIBCPP_VERSION
 
-constexpr const char * stdio_mode(std::ios_base::openmode mode) {
-  if (mode & std::ios_base::in) {
-    if (mode & std::ios_base::out) {
-      return "r+";
-    } else {
-      return "r";
-    }
-  } else {
-    if (mode & std::ios_base::out) {
-      return "w";
-    } else {
-      return "";
-    }
-  }
-}
-
-struct FILEwrap {
-  FILE * file;
-  typename std::char_traits<char>::state_type state;
+struct ifilebuf : boost::iostreams::stream_buffer<boost::iostreams::file_descriptor_source> {
   int desc;
-  FILEwrap(int descriptor, std::ios_base::openmode mode)
-    : file(fdopen(descriptor, stdio_mode(mode)))
+  ifilebuf(int descriptor, std::ios_base::openmode)
+    : boost::iostreams::stream_buffer<boost::iostreams::file_descriptor_source>(
+        descriptor, boost::iostreams::close_handle)
     , desc(descriptor)
-  {
-    if (not file) throw syscall_exception("fdopen");
-  }
-  ~FILEwrap() {
-    if (file) std::fclose(file);
-  }
-  int fd() noexcept { return desc; }
+    { }
+  int fd() const noexcept { return desc; }
 };
 
-struct ifilebuf : FILEwrap, std::__stdinbuf<char> {
-  ifilebuf(int descriptor, std::ios_base::openmode mode)
-    : FILEwrap(descriptor, mode)
-    , std::__stdinbuf<char>(file, &state)
+struct ofilebuf : boost::iostreams::stream_buffer<boost::iostreams::file_descriptor_sink> {
+  int desc;
+  ofilebuf(int descriptor, std::ios_base::openmode)
+    : boost::iostreams::stream_buffer<boost::iostreams::file_descriptor_sink>(
+        descriptor, boost::iostreams::close_handle)
+    , desc(descriptor)
     { }
-};
-
-struct ofilebuf : FILEwrap, std::__stdoutbuf<char> {
-  ofilebuf(int descriptor, std::ios_base::openmode mode)
-    : FILEwrap(descriptor, mode)
-    , std::__stdoutbuf<char>(file, &state)
-    { }
+  int fd() const noexcept { return desc; }
 };
 
 # else
