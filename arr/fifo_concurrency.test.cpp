@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2013, 2021, 2023
+// Copyright (c) 2013, 2021, 2023, 2026
 // Kyle Markley.  All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -178,17 +178,8 @@ SUITE(waiting) {
 using fifo_t = arr::fifo<std::size_t>;
 using namespace std::chrono_literals;
 
-struct timeout {
-  using clock = std::chrono::system_clock;
-  clock::time_point end;
-  timeout(clock::duration when)
-    : end(clock::now() + when)
-  { }
-  operator bool() const { return clock::now() < end; }
-};
-
 struct rate_limiter {
-  using clock = std::chrono::system_clock;
+  using clock = std::chrono::steady_clock;
   clock::time_point start;
   std::size_t rate; // elements per microsecond
   rate_limiter(std::size_t elements_per_us)
@@ -196,8 +187,7 @@ struct rate_limiter {
     , rate(elements_per_us)
   { }
 
-  bool should_pause(std::size_t count) const {
-    auto now = clock::now();
+  bool should_pause(std::size_t count, clock::time_point now = clock::now()) const {
     auto elapsed = now - start;
     using unit = std::chrono::microseconds;
     auto usec = std::chrono::duration_cast<unit>(elapsed).count();
@@ -208,10 +198,10 @@ struct rate_limiter {
 
 TEST(test_rate_limiter) {
   rate_limiter limiter(1u);
-  CHECK_EQUAL(false, limiter.should_pause(0u));
-  CHECK_EQUAL(true, limiter.should_pause(1000u));
-  std::this_thread::sleep_for(1ms);
-  CHECK_EQUAL(false, limiter.should_pause(1000u));
+  CHECK_EQUAL(false, limiter.should_pause(0u, limiter.start));
+  CHECK_EQUAL(true, limiter.should_pause(1000u, limiter.start));
+  CHECK_EQUAL(true, limiter.should_pause(1000u, limiter.start + 999us));
+  CHECK_EQUAL(false, limiter.should_pause(1000u, limiter.start + 1ms));
 }
 
 std::ostream& operator<<(std::ostream& o, const fifo_t::debug_info& d) {
@@ -249,9 +239,8 @@ void producer_code(
   auto& fifo      = w_fifo.get();
   rate_limiter limiter(rate);
   decltype(total) counter(0u);
-  timeout stopper(10s);
   agent_data data;
-  while (stopper and (counter < total)) {
+  while (counter < total) {
     if (limiter.should_pause(counter)) {
       ++data.pause;
       std::this_thread::sleep_for(1us);
@@ -263,17 +252,9 @@ void producer_code(
       fifo.push(counter++);
     }
   }
-  CHECK_EQUAL(counter, total);
   std::stringstream msg;
   msg << "producer " << data;
   std::cout << msg.str();
-  // Wake consumer on timeout
-  if (not stopper) {
-    std::this_thread::sleep_for(1s);
-    if (not fifo.full()) {
-      fifo.push(counter);
-    }
-  }
 }
 
 void consumer_code(
@@ -286,9 +267,8 @@ void consumer_code(
   auto& fifo      = w_fifo.get();
   rate_limiter limiter(rate);
   decltype(total) counter(0u);
-  timeout stopper(10s);
   agent_data data;
-  while (stopper and (counter < total)) {
+  while (counter < total) {
     if (limiter.should_pause(counter)) {
       ++data.pause;
       std::this_thread::sleep_for(1us);
@@ -312,18 +292,36 @@ void consumer_code(
   std::stringstream msg;
   msg << "consumer " << data;
   std::cout << msg.str();
-  // Wake producer on timeout
-  if (not stopper) {
-    std::this_thread::sleep_for(1s);
-    if (not fifo.empty()) {
-      fifo.pop();
-    }
-  }
 }
 
 TEST(report) {
   auto threads = std::thread::hardware_concurrency();
   std::cout << "Threads: " << threads << '\n';
+}
+
+TEST(wait_for_write) {
+  fifo_t fifo(1u);
+  std::thread consumer([&fifo] { fifo.wait_for_write(); });
+  while (fifo.get_debug_info().write_waiting == 0u) {
+    std::this_thread::yield();
+  }
+  fifo.push(42u);
+  consumer.join();
+  CHECK_EQUAL(42u, fifo.front());
+  fifo.pop();
+}
+
+TEST(wait_for_read) {
+  fifo_t fifo(1u);
+  fifo.push(42u);
+  std::thread producer([&fifo] { fifo.wait_for_read(); });
+  while (fifo.get_debug_info().read_waiting == 0u) {
+    std::this_thread::yield();
+  }
+  CHECK_EQUAL(42u, fifo.front());
+  fifo.pop();
+  producer.join();
+  CHECK_EQUAL(true, fifo.empty());
 }
 
 TEST(tiny) {
@@ -336,11 +334,6 @@ TEST(tiny) {
       p_rate, total);
   std::thread thread_c(consumer_code, std::ref(evaluator), std::ref(fifo),
       c_rate, total);
-  timeout stopper(12s);
-  while (stopper and (fifo.read_total() < total)) {
-    std::cout << fifo.get_debug_info() << '\n';
-    std::this_thread::sleep_for(250ms);
-  }
   thread_p.join();
   thread_c.join();
   CHECK_EQUAL(total, fifo.read_total());
@@ -356,11 +349,6 @@ TEST(slow) {
       p_rate, total);
   std::thread thread_c(consumer_code, std::ref(evaluator), std::ref(fifo),
       c_rate, total);
-  timeout stopper(12s);
-  while (stopper and (fifo.read_total() < total)) {
-    std::cout << fifo.get_debug_info() << '\n';
-    std::this_thread::sleep_for(250ms);
-  }
   thread_p.join();
   thread_c.join();
   CHECK_EQUAL(total, fifo.read_total());
@@ -376,11 +364,6 @@ TEST(pfast) {
       p_rate, total);
   std::thread thread_c(consumer_code, std::ref(evaluator), std::ref(fifo),
       c_rate, total);
-  timeout stopper(12s);
-  while (stopper and (fifo.read_total() < total)) {
-    std::cout << fifo.get_debug_info() << '\n';
-    std::this_thread::sleep_for(250ms);
-  }
   thread_p.join();
   thread_c.join();
   CHECK_EQUAL(total, fifo.read_total());
@@ -396,11 +379,6 @@ TEST(cfast) {
       p_rate, total);
   std::thread thread_c(consumer_code, std::ref(evaluator), std::ref(fifo),
       c_rate, total);
-  timeout stopper(12s);
-  while (stopper and (fifo.read_total() < total)) {
-    std::cout << fifo.get_debug_info() << '\n';
-    std::this_thread::sleep_for(250ms);
-  }
   thread_p.join();
   thread_c.join();
   CHECK_EQUAL(total, fifo.read_total());
@@ -416,11 +394,6 @@ TEST(fast) {
       p_rate, total);
   std::thread thread_c(consumer_code, std::ref(evaluator), std::ref(fifo),
       c_rate, total);
-  timeout stopper(12s);
-  while (stopper and (fifo.read_total() < total)) {
-    std::cout << fifo.get_debug_info() << '\n';
-    std::this_thread::sleep_for(250ms);
-  }
   thread_p.join();
   thread_c.join();
   CHECK_EQUAL(total, fifo.read_total());
